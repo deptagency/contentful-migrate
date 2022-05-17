@@ -68,7 +68,7 @@ export const handler = async (args: LoadArgs & { file: string }) => {
     migrationsDirectory, spaceId, environmentId, accessToken, dryRun
   })
   const name = (file) || set.lastRun
-  runMigrations(set, 'down', name, (error) => {
+  runMigrations(set, 'down', name!, (error) => {
     if (error) {
       log('error', error)
       process.exit(1)

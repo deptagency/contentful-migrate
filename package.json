@@ -12,13 +12,14 @@
     "node": ">=8"
   },
   "bin": {
-    "ctf-migrate": "./bin/ctf-migrate"
+    "ctf-migrate": "./dist/bin/ctf-migrate"
   },
   "scripts": {
     "precommit": "npm test",
-    "test": "npm run lint && npm run test:unit",
+    "build": "tsc",
+    "test": "npm run build && npm run lint && npm run test:unit",
     "test:ci": "npm run lint && npm run test:all",
-    "test:all": "mocha lib/__tests__/*.spec.js lib/**/__tests__/*.spec.js",
+    "test:all": "mocha dist/lib/__tests__/*.spec.js dist/lib/**/__tests__/*.spec.js",
     "test:unit": "npm run test:all -- --grep @integration --invert",
     "test:integration": "npm run test:all -- --grep @integration",
     "test:watch": "npm run test:unit -- --watch",
@@ -69,7 +70,6 @@
     "mkdirp": "^0.5.1",
     "p-map": "^4.0.0",
     "rimraf": "^3.0.2",
-    "tsup": "^5.12.8",
     "yargs": "^15.3.0"
   }
 }

@@ -94,7 +94,7 @@ export const handler = async (args: Args) => {
   });
   console.log(chalk.bold.blue('Processing migrations'))
   try {
-    await runMigrationsAsync(set, 'up', file)
+    await runMigrationsAsync(set, 'up', file!)
     console.log('All migrations applied')
     console.log(chalk.bold.yellow(`\n🎉  All content types in ${environmentId} are up-to-date`))
   } catch (err) {

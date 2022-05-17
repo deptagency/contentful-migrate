@@ -1,4 +1,4 @@
-import contentful from 'contentful-management'
+import contentful, { createClient } from 'contentful-management'
 import type Migration from 'contentful-migration'
 import run from './run'
 
@@ -26,7 +26,7 @@ export interface Args {
 const defaultSpaceLocale: string | null = null;
 const getDefaultLocale = async ({ accessToken, spaceId, environmentId }: Args): Promise<string> => {
   if (defaultSpaceLocale) return defaultSpaceLocale;
-  const client = contentful.createClient({ accessToken })
+  const client = createClient({ accessToken })
   const loc = await client.getSpace(spaceId)
     .then(space => space.getEnvironment(environmentId))
     .then(space => space.getLocales())
@@ -72,7 +72,7 @@ async function getStoreState ({ accessToken, spaceId, environmentId }: Args): Pr
     return cachedState
   }
 
-  const client = contentful.createClient({ accessToken })
+  const client = createClient({ accessToken })
   const entries = await client.getSpace(spaceId)
     .then(space => space.getEnvironment(environmentId))
     .then(space => space.getEntries(queryParams));
@@ -98,7 +98,7 @@ export class ContentfulStore {
     this.environmentId = environmentId
     this.accessToken = accessToken
     this.dryRun = dryRun
-    this.client = contentful.createClient({ accessToken })
+    this.client = createClient({ accessToken })
     this.locale = locale
     return this
   }

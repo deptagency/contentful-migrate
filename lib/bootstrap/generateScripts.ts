@@ -1,4 +1,4 @@
-import contentful from 'contentful-management'
+import { createClient } from 'contentful-management'
 import { ContentType } from 'contentful-management/dist/typings/export-types'
 import chalk from 'chalk'
 import pMap from 'p-map'
@@ -14,7 +14,7 @@ const concurrency = 5
 export default async function generateScripts (
   spaceId: string, environmentId: string, accessToken: string, migrationsDirectory: string
 ) {
-  const client = contentful.createClient({ accessToken })
+  const client = createClient({ accessToken })
   const space = await client.getSpace(spaceId)
   const environment = await space.getEnvironment(environmentId)
   // TODO: add pagination when content type exceeds 1000

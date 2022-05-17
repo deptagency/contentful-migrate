@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import contentful from 'contentful-management'
+import contentful, { createClient } from 'contentful-management'
 import { MigrationState } from '../store'
 import dateformat from 'dateformat'
 import expect from 'expect.js'
@@ -25,7 +25,7 @@ if (!spaceId) {
   throw new Error('Missing CONTENTFUL_INTEGRATION_SOURCE_SPACE in ENV!')
 }
 
-const client = contentful.createClient({ accessToken })
+const client = createClient({ accessToken })
 
 let defaultLocale: string;
 let environment: contentful.Environment;

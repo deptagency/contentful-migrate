@@ -10,7 +10,7 @@ import {
 
 const TIME_OUT = 5000 // in milliseconds
 
-const assertProps = (actualProps, expected) => {
+const assertProps = (actualProps: any, expected: any) => {
   Object.keys(actualProps).forEach((prop) => {
     expect(actualProps[prop]).to.be(expected[prop])
   })
@@ -58,7 +58,7 @@ describe('removeNullValues', () => {
 
 describe('rejectEmptyObjects', () => {
   it('rejects empty arrays, empty objects and falsey values', () => {
-    const keyValuePair = [
+    const keyValuePair: [string, any][] = [
       ['foo', 'bar'],
       ['horses', ['unicorn, pegasus']],
       ['peru', { animal: 'alpaca' }],
@@ -132,7 +132,7 @@ describe('restructureContentTypeJson', () => {
   })
 
   it('maps each field into id and props', () => {
-    actual.fields.forEach((field, index) => {
+    actual.fields.forEach((field: any, index: any) => {
       const expected = contentType.fields[index]
       expect(field.id).to.be(expected.id)
       assertProps(field.props, expected)
@@ -163,7 +163,7 @@ describe('jsonToScript', () => {
 
   it('generates description, up and down', () => {
     const actual = jsonToScript(contentType, editorInterface)
-    expect(actual).to.contain('module.exports.description = \'Create content model for Horse\'')
+    expect(actual).to.contain('module.exports.description = "Create content model for Horse"')
     expect(actual).to.contain('module.exports.up')
     expect(actual).to.contain('module.exports.down')
   }).timeout(TIME_OUT)
