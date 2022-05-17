@@ -18,7 +18,7 @@ export default async function rewriteMigration(
 
   return store
     .writeState({
-      lastRun: files.at(-1)?.fileName || null,
+      lastRun: files[files.length -1]?.fileName || null,
       migrations: files.map((file) => {
         const contentType = file.contentTypeId;
         return {
