@@ -3,12 +3,12 @@
 import yargs from 'yargs'
 import { initSpace } from '../../lib/store'
 
-exports.command = 'init'
+export const command = 'init'
 
-exports.desc =
+export const desc =
   'Prepares the specified space to allow managed migration scripts.\nThe "Migration" content-type will be created in your contentful space'
 
-exports.builder = (yargs: yargs.Argv) => {
+export const builder = (yargs: yargs.Argv) => {
   yargs
     .option('access-token', {
       alias: 't',
@@ -37,4 +37,4 @@ exports.builder = (yargs: yargs.Argv) => {
     })
 }
 
-exports.handler = initSpace;
+export const handler = initSpace;

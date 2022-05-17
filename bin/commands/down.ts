@@ -8,12 +8,12 @@ import load from '../../lib/load'
 import yargs from 'yargs'
 import { LoadArgs } from '../../lib/load'
 
-exports.command = 'down [file]'
+export const command = 'down [file]'
 
-exports.desc =
+export const desc =
   'Migrate down to a given migration or just the last one if not specified'
 
-exports.builder = (yargs: yargs.Argv) => {
+export const builder = (yargs: yargs.Argv) => {
   yargs
     .option('access-token', {
       alias: 't',
@@ -52,7 +52,7 @@ exports.builder = (yargs: yargs.Argv) => {
     })
 }
 
-exports.handler = async (args: LoadArgs & { file: string }) => {
+export const handler = async (args: LoadArgs & { file: string }) => {
   const {
     accessToken,
     dryRun,

@@ -7,12 +7,12 @@ import dateFormat from "dateformat"
 import log from "migrate/lib/log"
 import load from "../../lib/load";
 
-exports.command = "list";
+export const command = "list";
 
-exports.desc =
+export const desc =
   "List all migrations for a given content-type, also indicating whether it was already applied and when";
 
-exports.builder = (yargs: yargs.Argv) => {
+export const builder = (yargs: yargs.Argv) => {
   yargs
     .option("access-token", {
       alias: "t",

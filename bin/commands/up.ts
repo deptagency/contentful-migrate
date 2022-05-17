@@ -9,12 +9,12 @@ import chalk from 'chalk'
 import log from 'migrate/lib/log'
 import load from '../../lib/load'
 
-exports.command = 'up [file]'
+export const command = 'up [file]'
 
-exports.desc =
+export const desc =
   'Migrate up to a give migration or all pending if not specified'
 
-exports.builder = (yargs: yargs.Argv) => {
+export const builder = (yargs: yargs.Argv) => {
   yargs
     .option('access-token', {
       alias: 't',
@@ -73,7 +73,7 @@ interface Args {
   file?: string;
   spaceId: string;
 }
-exports.handler = async (args: Args) => {
+export const handler = async (args: Args) => {
   const {
     accessToken,
     dryRun,

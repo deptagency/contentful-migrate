@@ -8,12 +8,12 @@ import yargs from 'yargs'
 import bootstrap from '../../lib/bootstrap'
 import { Args } from '../../lib/store'
 
-exports.command = 'bootstrap'
+export const command = 'bootstrap'
 
-exports.desc =
+export const desc =
   'Takes a snapshot of existing space and automatically generate migration scripts'
 
-exports.builder = (yargs: yargs.Argv) => {
+export const builder = (yargs: yargs.Argv) => {
   yargs
     .option('access-token', {
       alias: 't',
@@ -44,7 +44,7 @@ exports.builder = (yargs: yargs.Argv) => {
 
 const isYes = (response: string) => response === 'y' || response === 'yes'
 
-exports.handler = async ({
+export const handler = async ({
   environmentId,
   spaceId,
   accessToken

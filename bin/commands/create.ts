@@ -7,12 +7,12 @@ import log from 'migrate/lib/log'
 import generator from 'migrate/lib/template-generator'
 import yargs from 'yargs'
 
-exports.command = 'create <name>'
+export const command = 'create <name>'
 
-exports.desc =
+export const desc =
   'Creates an empty time stamped file in the content-type\'s migrations folder'
 
-exports.builder = (yargs: yargs.Argv) => {
+export const builder = (yargs: yargs.Argv) => {
   yargs
     .positional('name', {
       describe: 'descriptive name for the migration file',
@@ -20,7 +20,7 @@ exports.builder = (yargs: yargs.Argv) => {
     })
 }
 
-exports.handler = ({ name }: { name: string }) => {
+export const handler = ({ name }: { name: string }) => {
   const migrationsDirectory = (
     process.env.CONTENTFUL_MIGRATIONS_DIR ||
     path.join('.', 'migrations'))
