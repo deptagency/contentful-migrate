@@ -38,9 +38,9 @@ export const createContentType = (item: any, editorInterface: any) => `
 `
 export const createScript = (item: any, editorInterface: any) => `module.exports.description = "Create content model for ${item.props.name}";
 
-  module.exports.up = (migration) => {${createContentType(item, editorInterface)}};
+module.exports.up = (migration) => {${createContentType(item, editorInterface)}};
 
-  module.exports.down = migration => migration.deleteContentType("${item.id}");
+module.exports.down = migration => migration.deleteContentType("${item.id}");
 `
 
 export const restructureFields = (field: any) => {
