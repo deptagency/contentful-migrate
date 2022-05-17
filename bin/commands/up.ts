@@ -1,21 +1,20 @@
 #!/usr/bin/env node
 // vim: set ft=javascript:
 /* eslint-disable no-console */
-
-const path = require('path')
-const { promisify } = require('util')
-const chalk = require('chalk')
-const pMap = require('p-map')
-const runMigrations = require('migrate/lib/migrate')
-const log = require('migrate/lib/log')
-const load = require('../../lib/load')
+import runMigrations from 'migrate/lib/migrate'
+import type yargs from 'yargs'
+import path from 'path'
+import { promisify } from 'util'
+import chalk from 'chalk'
+import log from 'migrate/lib/log'
+import load from '../../lib/load'
 
 exports.command = 'up [file]'
 
 exports.desc =
   'Migrate up to a give migration or all pending if not specified'
 
-exports.builder = (yargs) => {
+exports.builder = (yargs: yargs.Argv) => {
   yargs
     .option('access-token', {
       alias: 't',
@@ -63,26 +62,20 @@ exports.builder = (yargs) => {
       describe: 'If specified, applies all pending migrations scripts up to this one.',
       type: 'string'
     })
-    .check((argv) => {
-      if (argv.a && argv.c.length > 0) {
-        return 'Arguments \'content-type\' and \'all\' are mutually exclusive'
-      }
-      if (!argv.a && argv.c.length === 0) {
-        return 'At least one of \'all\' or \'content-type\' options must be specified'
-      }
-      if (argv.a && argv.file) {
-        return '[file] cannot be specified together with \'all\' option'
-      }
-      return true
-    })
 }
 
 const runMigrationsAsync = promisify(runMigrations)
 
-exports.handler = async (args) => {
+interface Args {
+  accessToken: string;
+  dryRun: boolean;
+  environmentId: string;
+  file?: string;
+  spaceId: string;
+}
+exports.handler = async (args: Args) => {
   const {
     accessToken,
-    contentType,
     dryRun,
     environmentId,
     file,
@@ -91,30 +84,22 @@ exports.handler = async (args) => {
 
   const migrationsDirectory = process.env.CONTENTFUL_MIGRATIONS_DIR || path.join('.', 'migrations')
 
-  const processSet = async (set) => {
-    console.log(chalk.bold.blue('Processing'), set.store.contentTypeID)
-    await runMigrationsAsync(set, 'up', file)
-    log('All migrations applied for', `${set.store.contentTypeID}`)
-  }
-
   // Load in migrations
-  const sets = await load({
+  const set = await load({
     accessToken,
-    contentTypes: contentType,
     dryRun,
     environmentId,
     migrationsDirectory,
     spaceId
-  })
-
-  // TODO concurrency can be an cmdline option? I set it to 1 for now to make logs more readable
-  pMap(sets, processSet, { concurrency: 1 })
-    .then(() => {
-      console.log(chalk.bold.yellow(`\n🎉  All content types in ${environmentId} are up-to-date`))
-    })
-    .catch((err) => {
-      log.error('error', err)
-      console.log(chalk.bold.red(`\n🚨  Error applying migrations to "${environmentId}" environment! See above for error messages`))
-      process.exit(1)
-    })
+  });
+  console.log(chalk.bold.blue('Processing migrations'))
+  try {
+    await runMigrationsAsync(set, 'up', file)
+    console.log('All migrations applied')
+    console.log(chalk.bold.yellow(`\n🎉  All content types in ${environmentId} are up-to-date`))
+  } catch (err) {
+    log.error('error', err)
+    console.log(chalk.bold.red(`\n🚨  Error applying migrations to "${environmentId}" environment! See above for error messages`))
+    process.exit(1)
+  }
 }

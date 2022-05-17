@@ -1,27 +1,27 @@
-const contentful = require('contentful-management')
-const chalk = require('chalk')
-const pMap = require('p-map')
-const log = require('migrate/lib/log')
+import contentful from 'contentful-management'
+import { ContentType } from 'contentful-management/dist/typings/export-types'
+import chalk from 'chalk'
+import pMap from 'p-map'
+import log from 'migrate/lib/log'
 
-const createFile = require('./createFile')
-const { jsonToScript } = require('./jsonToScript')
+import createFile from './createFile'
+import { jsonToScript } from './jsonToScript'
 
 // Magic number to prevent overloading the contentful management API.
 // TODO: passed in from bootstrap command as an option
 const concurrency = 5
 
-const generateScripts = async (spaceId, environmentId, contentTypes, accessToken, migrationsDirectory) => {
+export default async function generateScripts (
+  spaceId: string, environmentId: string, accessToken: string, migrationsDirectory: string
+) {
   const client = contentful.createClient({ accessToken })
   const space = await client.getSpace(spaceId)
   const environment = await space.getEnvironment(environmentId)
   // TODO: add pagination when content type exceeds 1000
   const contentTypeResponse = await environment.getContentTypes({ limit: 1000 })
-  let requiredContentTypes = contentTypeResponse.items.filter(item => item.sys.id !== 'migration')
-  if (contentTypes.length > 0) {
-    const contentTypesSet = new Set(contentTypes)
-    requiredContentTypes = requiredContentTypes.filter(contentType => contentTypesSet.has(contentType.sys.id))
-  }
-  const mapper = (contentType) => {
+  const requiredContentTypes = contentTypeResponse.items.filter(item => item.sys.id !== 'migration')
+
+  const mapper = (contentType: ContentType) => {
     const contentTypeId = contentType.sys.id
     return environment.getEditorInterfaceForContentType(contentTypeId)
       .then((editorInterface) => {
@@ -38,4 +38,3 @@ const generateScripts = async (spaceId, environmentId, contentTypes, accessToken
   return files
 }
 
-module.exports = generateScripts

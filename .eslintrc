@@ -1,5 +1,9 @@
 {
-  "extends": "eslint-config-standard",
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    "@typescript-eslint"
+  ],
   "root": true,
   "rules": {
     "max-len": [
@@ -9,7 +13,8 @@
         "ignoreStrings": true,
         "ignoreTemplateLiterals": true
       }
-    ]
+    ],
+    "@typescript-eslint/no-explicit-any": "off"
   },
   "overrides": [
     {

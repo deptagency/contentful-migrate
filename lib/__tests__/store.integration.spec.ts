@@ -1,9 +1,11 @@
-const contentful = require('contentful-management')
-const dateformat = require('dateformat')
-const expect = require('expect.js')
-const fs = require('fs')
-const path = require('path')
-const { execSync, spawnSync } = require('child_process')
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import contentful from 'contentful-management'
+import { MigrationState } from '../store'
+import dateformat from 'dateformat'
+import expect from 'expect.js'
+import fs from 'fs'
+import path from 'path'
+import { execSync, spawnSync } from 'child_process'
 
 const accessToken = process.env.CONTENTFUL_INTEGRATION_MANAGEMENT_TOKEN
 const spaceId = process.env.CONTENTFUL_INTEGRATION_SOURCE_SPACE
@@ -13,7 +15,7 @@ const TIME_OUT = 30000 // in milliseconds
 const NODE_CMD = 'node'
 const MIGRATION_CMD = 'bin/ctf-migrate'
 const MIGRATIONS_FOLDER = path.join(process.cwd(), 'migrations')
-const TOKEN_SPACE_ENV_OPTIONS = ['-t', accessToken, '-s', spaceId, '-e', environmentId]
+const TOKEN_SPACE_ENV_OPTIONS: string[] = ['-t', accessToken!, '-s', spaceId!, '-e', environmentId]
 
 if (!accessToken) {
   throw new Error('Missing CONTENTFUL_INTEGRATION_MANAGEMENT_TOKEN in ENV!')
@@ -25,19 +27,18 @@ if (!spaceId) {
 
 const client = contentful.createClient({ accessToken })
 
-let defaultLocale
-let environment
+let defaultLocale: string;
+let environment: contentful.Environment;
 
-// using function because arrow functions can't set timeout in mocha... what?
-async function createTestEnvironment () {
+async function createTestEnvironment (this: Mocha.Context) {
   this.timeout(TIME_OUT)
-  const space = await client.getSpace(spaceId)
+  const space = await client.getSpace(spaceId!)
   environment = await space.createEnvironmentWithId(environmentId, { name: environmentId })
   while (!defaultLocale) {
     try {
       defaultLocale = await environment.getLocales()
         .then(response => response.items.find(locale => locale.default))
-        .then(locale => locale.code)
+        .then(locale => locale!.code)
     } catch (e) {
       console.log('Environment not created yet. Retrying')
     }
@@ -45,11 +46,10 @@ async function createTestEnvironment () {
   return true
 }
 
-// using function because arrow functions can't set timeout in mocha... what?
-async function deleteTestEnvironment () {
+async function deleteTestEnvironment (this: Mocha.Context) {
   this.timeout(TIME_OUT)
   spawnSync('rm', ['-r', MIGRATIONS_FOLDER])
-  return environment.delete()
+  return environment && environment.delete()
 }
 
 describe('Integration Test @integration', () => {
@@ -66,7 +66,7 @@ describe('Integration Test @integration', () => {
         [MIGRATION_CMD, 'init', ...TOKEN_SPACE_ENV_OPTIONS]
       )
       const migration = await environment.getContentType('migration')
-      const { name, displayField, fields } = migration
+      const { name, displayField, fields } = migration!
       expect(name).to.be('Migration')
       expect(displayField).to.be('contentTypeId')
       expect(fields).to.have.length(2)
@@ -110,7 +110,7 @@ describe('Integration Test @integration', () => {
       )
 
       const migration = await environment.getEntry(contentType)
-      const state = migration.fields.state[defaultLocale]
+      const state: MigrationState = migration.fields.state[defaultLocale]
       const scriptsRan = state.migrations.map(migration => migration.title)
       expect(scriptsRan).to.have.length(1)
 
@@ -146,7 +146,7 @@ describe('Integration Test @integration', () => {
       )
 
       const migration = await environment.getEntry(contentType)
-      const state = migration.fields.state[defaultLocale]
+      const state: MigrationState = migration.fields.state[defaultLocale]
       const scriptsRan = state.migrations.map(migration => migration.title)
       expect(scriptsRan).to.have.length(2)
       expect(state.lastRun).to.be(scriptsRan[scriptsRan.length - 1])
@@ -209,7 +209,9 @@ describe('Integration Test @integration', () => {
         fields: [{
           id: 'name',
           name: 'Name',
-          type: 'Text'
+          type: 'Text',
+          required: false,
+          localized: false,
         }]
       }
       await environment.createContentTypeWithId(contentType, contentTypeOptions)
@@ -227,7 +229,7 @@ describe('Integration Test @integration', () => {
       expect(migrationScripts[0]).to.match(fileNameRegExp)
 
       const migration = await environment.getEntry(contentType)
-      const state = migration.fields.state[defaultLocale]
+      const state: MigrationState = migration.fields.state[defaultLocale]
       const scriptsRan = state.migrations.map(migration => migration.title)
       expect(migrationScripts).to.not.eql(scriptsRan)
     }).timeout(30000)
@@ -247,7 +249,9 @@ describe('Integration Test @integration', () => {
         fields: [{
           id: 'name',
           name: 'Name',
-          type: 'Text'
+          type: 'Text',
+          required: false,
+          localized: false,
         }]
       }
       await environment.createContentTypeWithId('alpaca', contentTypeOptions)
@@ -265,7 +269,7 @@ describe('Integration Test @integration', () => {
       execSync(command)
 
       const migration = await environment.getEntry(contentType)
-      const state = migration.fields.state[defaultLocale]
+      const state: MigrationState = migration.fields.state[defaultLocale]
       const scriptsRan = state.migrations.map(migration => migration.title)
       expect(scriptsRan).to.have.length(1)
 
@@ -280,7 +284,7 @@ describe('Integration Test @integration', () => {
 
       const migrations = await environment.getEntries({ content_type: 'migration' })
       migrations.items.forEach((migration) => {
-        const state = migration.fields.state[defaultLocale]
+        const state: MigrationState = migration.fields.state[defaultLocale]
         const scriptsRan = state.migrations.map(migration => migration.title)
         expect(scriptsRan).to.have.length(1)
 

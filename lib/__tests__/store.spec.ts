@@ -1,7 +1,7 @@
-const expect = require('expect.js')
-const { ContentfulStore } = require('../store')
+import expect from 'expect.js'
+import { ContentfulStore, MigrationState } from '../store'
 
-const set = JSON.parse(`
+const set: MigrationState = JSON.parse(`
 {
   "migrations": [
     {
@@ -22,8 +22,9 @@ describe('ContentfulStore', () => {
   const store = new ContentfulStore({
     accessToken: 'token',
     spaceId: 'space-id',
-    contentType: 'test',
-    locale: 'en-US'
+    environmentId: 'master',
+    locale: 'en-US',
+    dryRun: false,
   })
 
   describe('isSetEmpty', () => {
@@ -59,7 +60,7 @@ describe('ContentfulStore', () => {
     })
 
     describe('with a set with pending migrations', () => {
-      const setWithPendingMigrations = {
+      const setWithPendingMigrations: MigrationState = {
         migrations: [
           {
             title: '20180822174241-test_111.js',

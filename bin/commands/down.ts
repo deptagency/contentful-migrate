@@ -1,17 +1,19 @@
 #!/usr/bin/env node
 // vim: set ft=javascript:
 
-const path = require('path')
-const runMigrations = require('migrate/lib/migrate')
-const log = require('migrate/lib/log')
-const load = require('../../lib/load')
+import path from 'path'
+import runMigrations from 'migrate/lib/migrate'
+import log from 'migrate/lib/log'
+import load from '../../lib/load'
+import yargs from 'yargs'
+import { LoadArgs } from '../../lib/load'
 
 exports.command = 'down [file]'
 
 exports.desc =
   'Migrate down to a given migration or just the last one if not specified'
 
-exports.builder = (yargs) => {
+exports.builder = (yargs: yargs.Argv) => {
   yargs
     .option('access-token', {
       alias: 't',
@@ -38,11 +40,6 @@ exports.builder = (yargs) => {
       default: process.env.CONTENTFUL_ENV_ID || 'master',
       defaultDescription: 'environment var CONTENTFUL_ENV_ID if exists, otherwise master'
     })
-    .option('content-type', {
-      alias: 'c',
-      describe: 'single content type name to process',
-      demandOption: true
-    })
     .option('dry-run', {
       alias: 'd',
       describe: 'only shows the planned actions, don\'t write anything to Contentful',
@@ -55,10 +52,9 @@ exports.builder = (yargs) => {
     })
 }
 
-exports.handler = async (args) => {
+exports.handler = async (args: LoadArgs & { file: string }) => {
   const {
     accessToken,
-    contentType,
     dryRun,
     environmentId,
     file,
@@ -67,29 +63,18 @@ exports.handler = async (args) => {
 
   const migrationsDirectory = process.env.CONTENTFUL_MIGRATIONS_DIR || path.join('.', 'migrations')
 
-  const processSet = (set) => {
-    const name = (file) || set.lastRun
-
-    runMigrations(set, 'down', name, (error) => {
-      if (error) {
-        log('error', error)
-        process.exit(1)
-      }
-
-      log('migration', 'complete')
-      process.exit(0)
-    })
-  }
-
   // Load in migrations
-  const sets = await load({
-    migrationsDirectory, spaceId, environmentId, accessToken, dryRun, contentTypes: [contentType]
+  const set = await load({
+    migrationsDirectory, spaceId, environmentId, accessToken, dryRun
   })
-
-  sets.forEach(set => set
-    .then(processSet)
-    .catch((err) => {
-      log.error('error', err)
+  const name = (file) || set.lastRun
+  runMigrations(set, 'down', name, (error) => {
+    if (error) {
+      log('error', error)
       process.exit(1)
-    }))
+    }
+
+    log('migration', 'complete')
+    process.exit(0)
+  })
 }

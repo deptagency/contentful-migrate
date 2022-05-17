@@ -6,30 +6,39 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-await-in-loop */
 
-const path = require('path')
+import path from 'path'
 
-const Listr = require('listr')
-const chalk = require('chalk')
-const { createManagementClient } = require('contentful-migration/built/bin/lib/contentful-client')
-const { SpaceAccessError } = require('contentful-migration/built/lib/errors')
-const migrationParser1 = require('contentful-migration/built/lib/migration-parser')
-const renderMigration = require('contentful-migration/built/bin/lib/render-migration')
-const stepsError = require('contentful-migration/built/bin/lib/steps-errors')
-const writeErrorsToLog = require('contentful-migration/built/bin/lib/write-errors-to-log')
-const { createMakeRequest } = require('contentful-migration/built/bin/cli')
-const { version } = require('../package.json')
+import Listr from 'listr'
+import chalk from 'chalk'
+import { createManagementClient } from 'contentful-migration/built/bin/lib/contentful-client'
+import { SpaceAccessError } from 'contentful-migration/built/lib/errors'
+import createMigrationParser from 'contentful-migration/built/lib/migration-parser'
+import renderMigration from 'contentful-migration/built/bin/lib/render-migration'
+import stepsError from 'contentful-migration/built/bin/lib/steps-errors'
+import writeErrorsToLog from 'contentful-migration/built/bin/lib/write-errors-to-log'
+import { createMakeRequest } from 'contentful-migration/built/bin/cli'
+import { version } from '../package.json'
 
 class BatchError extends Error {
-  constructor (message, batch, errors) {
+  public batch: any;
+  public errors: any[];
+  constructor (message: string, batch: any, errors: any[]) {
     super(message)
     this.batch = batch
     this.errors = errors
   }
 }
 
+export interface RunArgs {
+  spaceId: string,
+  environmentId: string,
+  accessToken: string,
+  dryRun: boolean,
+  migrationFunction: (args: any) => any
+}
 const run = async ({
   spaceId, environmentId, accessToken, dryRun, migrationFunction
-}) => {
+}: RunArgs) => {
   const config = { spaceId, environmentId, accessToken }
   if (!/^CFPAT-/.test(accessToken)) {
     console.log("error: access token not set or did not match pattern. Make sure you're using a personal access token")
@@ -45,7 +54,7 @@ const run = async ({
     spaceId: config.spaceId,
     environmentId: config.environmentId
   })
-  const migrationParser = migrationParser1.default(makeRequest, clientConfig)
+  const migrationParser = createMigrationParser(makeRequest, clientConfig)
   let parseResult
   try {
     parseResult = await migrationParser(migrationFunction)
@@ -62,11 +71,11 @@ const run = async ({
     process.exit(1)
   }
   if (parseResult.hasStepsValidationErrors()) {
-    stepsError.default(parseResult.stepsValidationErrors)
+    stepsError(parseResult.stepsValidationErrors)
     process.exit(1)
   }
   if (parseResult.hasPayloadValidationErrors()) {
-    stepsError.default(parseResult.payloadValidationErrors)
+    stepsError(parseResult.payloadValidationErrors)
     process.exit(1)
   }
   // const migrationName = path.basename(argv.filePath, '.js');
@@ -74,16 +83,16 @@ const run = async ({
   const errorsFile = path.join(process.cwd(), `errors-${Date.now()}.log`)
   const { batches } = parseResult
   if (parseResult.hasValidationErrors()) {
-    renderMigration.renderValidationErrors(batches)
+    renderMigration.renderValidationErrors(batches, environmentId)
     process.exit(1)
   }
   if (parseResult.hasRuntimeErrors()) {
     renderMigration.renderRuntimeErrors(batches, errorsFile)
-    await writeErrorsToLog.default(parseResult.getRuntimeErrors(), errorsFile)
+    await writeErrorsToLog(parseResult.getRuntimeErrors(), errorsFile)
     process.exit(1)
   }
   await renderMigration.renderPlan(batches, environmentId)
-  const serverErrorsWritten = []
+  const serverErrorsWritten: Promise<void>[] = []
   const tasks = batches.map((batch) => {
     return {
       title: batch.intent.toPlanMessage().heading,
@@ -94,7 +103,7 @@ const run = async ({
             // TODO: We wanted to make this an async interator
             // So we should not inspect the length but have a property for that
             const numRequests = batch.requests.length
-            const requestErrors = []
+            const requestErrors: Error[] = []
             let requestsDone = 0
             for (const request of batch.requests) {
               requestsDone += 1
@@ -105,7 +114,7 @@ const run = async ({
               /* eslint-enable no-param-reassign */
 
               await makeRequest(request).catch((error) => {
-                serverErrorsWritten.push(writeErrorsToLog.default(error, errorsFile))
+                serverErrorsWritten.push(writeErrorsToLog(error, errorsFile))
                 const parsed = JSON.parse(error.message)
                 const errorMessage = {
                   status: parsed.statusText,
@@ -130,10 +139,10 @@ const run = async ({
       const successfulMigration = await (new Listr(tasks)).run()
       console.log(chalk.bold.green('🎉  Migration successful'))
       return successfulMigration
-    } catch (err) {
+    } catch (err: any) {
       console.log(chalk.bold.red('🚨  Migration unsuccessful: '))
       console.log(chalk.red(`${err.message}\n`))
-      err.errors.forEach(error => console.log(chalk.red(`${error}\n\n`)))
+      err.errors.forEach((error: any) => console.log(chalk.red(`${error}\n\n`)))
       await Promise.all(serverErrorsWritten)
       console.log(`Please check the errors log for more details: ${errorsFile}`)
       throw err
@@ -142,7 +151,7 @@ const run = async ({
   return console.log(chalk.bold.yellow('⚠️  Dry run completed'))
 }
 
-module.exports = (args) => {
+export default function(args: RunArgs & { next(err?: any): void }) {
   return run(args)
     .then(() => args.next())
     .catch(err => args.next(err))
