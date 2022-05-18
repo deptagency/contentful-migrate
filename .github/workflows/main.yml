@@ -9,7 +9,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        node_version: [10, 12, 14]
+        node_version: [12, 16]
 
     steps:
       - uses: actions/checkout@v1
@@ -23,4 +23,5 @@ jobs:
           CONTENTFUL_INTEGRATION_SOURCE_SPACE: ${{ secrets.CONTENTFUL_SPACE_ID }}
         run: |
           npm install
+          npm run build
           npm run test:ci
