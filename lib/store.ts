@@ -168,7 +168,7 @@ export class ContentfulStore {
 
   load (fn: (error: any, state: MigrationState) => any): void {
     getStoreState(this.args)
-      .then(state => fn(null, state || {}));
+      .then(state => fn(null, (state || {}) as any));
   }
 
   init () {

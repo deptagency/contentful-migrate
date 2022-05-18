@@ -64,6 +64,6 @@ export default async function load({
     spaceId
   })
 
-  return loadAsync({ stateStore: store, migrationsDirectory })
+  return loadAsync({ stateStore: store as any, migrationsDirectory })
     .then((set: MigrationSet) => configureSet(set, spaceId, environmentId, accessToken, dryRun))
 }

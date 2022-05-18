@@ -191,7 +191,7 @@ describe('Integration Test @integration', () => {
       expect(scriptsRan).to.have.length(2)
 
       const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER)
-      expect(migrationScripts).to.eql(scriptsRan)
+      expect(migrationScripts.sort()).to.eql(scriptsRan.sort())
     }).timeout(30000)
   })
 })

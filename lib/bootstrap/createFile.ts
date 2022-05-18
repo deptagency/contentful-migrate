@@ -10,24 +10,23 @@ export interface CreatedFile { contentTypeId: string, fileName: string }
 export default async function createFile(
   contentTypeId: string, fileContent: string, migrationsDirectory: string
 ): Promise<CreatedFile> {
-  const directory = path.join(migrationsDirectory, contentTypeId)
   // Ensure migrations directory exists
-  await mkdirp(directory).catch(makeDirectoryError => {
-    logError(`🚨  Failed to create ${directory}`, makeDirectoryError);
+  await mkdirp(migrationsDirectory).catch(makeDirectoryError => {
+    logError(`🚨  Failed to create ${migrationsDirectory}`, makeDirectoryError);
     throw makeDirectoryError;
   })
 
   // Fix up file path
   const date = dateformat(new Date(), 'UTC:yyyymmddHHMMss')
   const fileName = `${date}-create-${camelToDash(contentTypeId)}.js`
-  const filePath = path.join(directory, fileName)
+  const filePath = path.join(migrationsDirectory, fileName)
 
   // Write the template file
   await fs.promises.writeFile(filePath, fileContent).catch((writeFileError: any) => {
-    logError(`🚨  Failed to create ${directory}/${fileName}`, writeFileError);
+    logError(`🚨  Failed to create ${fileName}`, writeFileError);
     throw writeFileError
   });
-  log('Created', `${directory}/${fileName}`)
+  log('Created', fileName)
   return { contentTypeId, fileName }
 }
 
