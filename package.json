@@ -1,5 +1,5 @@
 {
-  "name": "contentful-migrate",
+  "name": "@bgschiller/contentful-migrate",
   "version": "0.17.0",
   "description": "Migration tooling for Contentful, with state management",
   "keywords": [
@@ -30,17 +30,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/deluan/contentful-migrate.git"
+    "url": "git+https://github.com/bgschiller/contentful-migrate.git"
   },
   "contributors": [
     "Deluan Quintao",
-    "Jerry Ma"
+    "Jerry Ma",
+    "Brian Schiller"
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/deluan/contentful-migrate/issues"
+    "url": "https://github.com/bgschiller/contentful-migrate/issues"
   },
-  "homepage": "https://github.com/deluan/contentful-migrate#readme",
+  "homepage": "https://github.com/bgschiller/contentful-migrate#readme",
   "devDependencies": {
     "@types/dateformat": "^5.0.0",
     "@types/eslint": "^8.4.2",

@@ -6,6 +6,7 @@ import chalk from 'chalk'
 import log from 'migrate/lib/log'
 import generator from 'migrate/lib/template-generator'
 import yargs from 'yargs'
+import mkdirp from 'mkdirp'
 
 export const command = 'create <name>'
 
@@ -20,10 +21,11 @@ export const builder = (yargs: yargs.Argv) => {
     })
 }
 
-export const handler = ({ name }: { name: string }) => {
+export const handler = async ({ name }: { name: string }) => {
   const migrationsDirectory = (
     process.env.CONTENTFUL_MIGRATIONS_DIR ||
     path.join('.', 'migrations'))
+  await mkdirp(migrationsDirectory);
 
   const templateFile = path.join(__dirname, '..', '..', 'lib', 'template.js')
 

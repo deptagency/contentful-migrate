@@ -1,9 +1,15 @@
 # Contentful Migrate Tool
 
-[![npm](https://img.shields.io/npm/v/contentful-migrate.svg)](https://www.npmjs.com/package/contentful-migrate)
-[![contentful-migration version](https://img.shields.io/npm/dependency-version/contentful-migrate/contentful-migration)](https://www.npmjs.com/package/contentful-migration)
-[![Build Status](https://github.com/deluan/contentful-migrate/workflows/CI/badge.svg)](https://github.com/deluan/contentful-migrate/actions)
-[![Downloads](https://img.shields.io/npm/dm/contentful-migrate)](https://www.npmjs.com/package/contentful-migrate)
+<!-- [![npm](https://img.shields.io/npm/v/contentful-migrate.svg)](https://www.npmjs.com/package/contentful-migrate)
+[![contentful-migration version](https://img.shields.io/npm/dependency-version/contentful-migrate/contentful-migration)](https://www.npmjs.com/package/contentful-migration) -->
+[![Build Status](https://github.com/bgschiller/contentful-migrate/workflows/CI/badge.svg)](https://github.com/bgschiller/contentful-migrate/actions)
+
+Forked from [deluan/contentful-migrate](https://github.com/deluan/contentful-migrate). The primary changes include:
+- A single track of migrations, rather than one for each content type. This is safer when content types depend on one another.
+- Added Typescript annotations to source.
+- migration template uses jsdoc comments to get typechecking
+- bootstrap will avoid trying to set a null `.displayField()` value
+- Common usage mistakes have better error messages. For example: using a contentful cdn token rather than an access token or running `up` without `init`.
 
 Manage your Contentful schema by creating incremental scripted changes. This project is based on the ideas exposed
 in [Contentful's CMS as Code article](https://www.contentful.com/r/knowledgebase/cms-as-code/)
@@ -11,8 +17,13 @@ in [Contentful's CMS as Code article](https://www.contentful.com/r/knowledgebase
 Scripts are written using [Contentful's migration tool](https://github.com/contentful/contentful-migration) syntax. Ex:
 
 ```javascript
+// @ts-check
+
 module.exports.description = "Create Post model";
 
+/**
+ * @param {import("contentful-migration").default} migration
+ */
 module.exports.up = migration => {
   const post = migration
     .createContentType("post")
@@ -28,24 +39,24 @@ module.exports.up = migration => {
     .localized(false);
 };
 
+/**
+ * @param {import("contentful-migration").default} migration
+ */
 module.exports.down = migration => {
   migration.deleteContentType("post");
 };
 ```
 
 This command line tool is designed to keep track of changes of content types individually. It keeps the
-scripts in a `migrations` folder in your project. This folder must contain one subfolder for each
-content type. Ex:
+scripts in a `migrations` folder in your project. Ex:
 
 ```
 your-project
 ├── README.md
 ├── migrations
-│   ├── banner
-│   │   └── 1513743198536-create-banner.js
-│   └── post
-│       ├── 1513695986378-create-post.js
-│       └── 1513716408272-add-date-field.js
+│   ├── 1513743198536-create-banner.js
+│   ├── 1513695986378-create-post.js
+│   └── 1513716408272-add-date-field.js
 ├── package.json
 .
 .
@@ -65,7 +76,7 @@ For more information on schema migrations technique and practice, see:
 ## Installation
 
 ```sh
-npm install -g contentful-migrate
+npm install @bgschiller/contentful-migrate
 ```
 
 ## Usage
@@ -111,11 +122,9 @@ Note: It will delete any existing migration scripts and create a consolidated on
     -t, --access-token [access-token]  CMA token, defaults to your environment variable CONTENTFUL_MANAGEMENT_ACCESS_TOKEN if empty
     -s, --space-id [space-id]          space id to use (defaults to environment variable CONTENTFUL_SPACE_ID)
     -e, --environment-id [env-id]      id of the environment within the space (defaults to environment variable CONTENTFUL_ENV_ID if set, otherwise defaults to 'master')
-    -c, --content-type [content-type]  one or more content type to bootstrap with choice to overwrite migration state
-    -a, --all                          apply bootstrap to all with choice to overwrite migration state
 ```
 
-Example: executing the command `ctf-migrate bootstrap -c post -s <space-id>` will create a file where the `up` command will generate the exact snapshot of the `Post` content model
+Example: executing the command `ctf-migrate bootstrap -s <space-id>` will create a file where the `up` command will generate the exact snapshot of the `Post` content model
 
 ### create
 
@@ -123,14 +132,9 @@ Creates an empty time stamped file in the content-type's migrations folder.
 
 ```
   Usage: ctf-migrate create <name> [options]
-
-  Options:
-
-    -c, --content-type <content-type>  content type name
 ```
 
-Example: executing the command `ctf-migrate create create-post-model -c post` will create
-a file named `./migrations/post/1513695986378-create-post.js` (the timestamp will vary)
+Example: executing the command `ctf-migrate create create-post-model` will create a file named `./migrations/post/1513695986378-create-post.js` (the timestamp will vary)
 
 ### list
 
@@ -145,24 +149,20 @@ applied and when.
     -t, --access-token [access-token]  CMA token, defaults to your environment variable CONTENTFUL_MANAGEMENT_ACCESS_TOKEN if empty
     -s, --space-id [space-id]          space id to use (defaults to environment variable CONTENTFUL_SPACE_ID)
     -e, --environment-id [env-id]      id of the environment within the space (defaults to environment variable CONTENTFUL_ENV_ID if set, otherwise defaults to 'master')
-    -c, --content-type [content-type]  one or more content type names to list
-    -a, --all                          lists migrations for all content types
 ```
 
 Example:
 
 ```bash
-$ ctf-migrate list -s i2ztmmsocxul -c post banner
-Listing post
+$ ctf-migrate list -s i2ztmmsocxul
+Listing Migrations
   [2017-12-19 22:12:58] 1513695986378-create-post.js : Create Post model
-  [pending] 1513716408272-add-title-field.js : Adds title field
-Listing banner
   [2018-01-08 15:01:45] 20180103165614-create-banner.js : Create Banner model
   [2018-01-22 11:01:33] 20180111172942-add-subtitle-field.js: Add Subtitle field
+  [pending] 1513716408272-add-title-field.js : Adds title field
 ```
 
-For the `post` model in this example, the first script (`create-post.js`) has already been applied but the
-second one (`add-title-field.js`) has not. For the `banner` model, all scripts have been applied.
+For the `post` model in this example, the first script (`create-post.js`) has already been applied but the second one (`add-title-field.js`) has not. For the `banner` model, all scripts have been applied.
 
 ### up
 
@@ -177,8 +177,6 @@ the specified content-type into the specified space.
     -t, --access-token [access-token]  CMA token, defaults to your environment variable CONTENTFUL_MANAGEMENT_ACCESS_TOKEN if empty
     -s, --space-id [space-id]          space id to use (defaults to environment variable CONTENTFUL_SPACE_ID)
     -e, --environment-id [env-id]      id of the environment within the space (defaults to environment variable CONTENTFUL_ENV_ID if set, otherwise defaults to 'master')
-    -c, --content-type [content-type]  one or more content type names to process
-    -a, --all                          processes migrations for all content types
     -d, --dry-run                      only shows the plan, don't write anything to contentful. defaults to false
 ```
 
@@ -201,7 +199,6 @@ for the specified content-type from the specified space.
     -t, --access-token [access-token]  CMA token, defaults to your environment variable CONTENTFUL_MANAGEMENT_ACCESS_TOKEN if empty
     -s, --space-id [space-id]          space id to use (defaults to environment variable CONTENTFUL_SPACE_ID)
     -e, --environment-id [env-id]      id of the environment within the space (defaults to environment variable CONTENTFUL_ENV_ID if set, otherwise defaults to 'master')
-    -c, --content-type [content-type]  content type name
     -d, --dry-run                      only shows the plan, don't write anything to contentful. defaults to false
 ```
 
