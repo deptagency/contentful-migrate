@@ -66,8 +66,9 @@ export function initSpace({ accessToken, spaceId, environmentId }: Args): Promis
   });
 }
 
-let cachedState: contentful.Entry | null;
-async function getStoreState ({ accessToken, spaceId, environmentId }: Args): Promise<contentful.Entry | null> {
+let cachedState: MigrationState | null;
+async function getStoreState (args: Args): Promise<MigrationState | null> {
+  const { accessToken, spaceId, environmentId } = args;
   if (typeof cachedState !== 'undefined') {
     return cachedState
   }
@@ -76,7 +77,11 @@ async function getStoreState ({ accessToken, spaceId, environmentId }: Args): Pr
   const entries = await client.getSpace(spaceId)
     .then(space => space.getEnvironment(environmentId))
     .then(space => space.getEntries(queryParams));
-  cachedState = entries.items[0] || null;
+  if (entries.items[0]) {
+    cachedState = entries.items[0].fields.state[await getDefaultLocale(args)];
+  } else {
+    cachedState = null;
+  }
   return cachedState;
 }
 
@@ -161,14 +166,9 @@ export class ContentfulStore {
     return { accessToken: this.accessToken, spaceId:  this.spaceId, environmentId: this.environmentId};
   }
 
-  load (fn: (error: any, state: any) => any) {
+  load (fn: (error: any, state: MigrationState) => any): void {
     getStoreState(this.args)
-      .then(state => {
-        if (typeof state !== 'undefined') {
-          return fn(null, state)
-        }
-        return fn(null, {})
-      });
+      .then(state => fn(null, state || {}));
   }
 
   init () {

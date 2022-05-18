@@ -13,7 +13,7 @@ import chalk from 'chalk'
 import { createManagementClient } from 'contentful-migration/built/bin/lib/contentful-client'
 import { SpaceAccessError } from 'contentful-migration/built/lib/errors'
 import createMigrationParser from 'contentful-migration/built/lib/migration-parser'
-import renderMigration from 'contentful-migration/built/bin/lib/render-migration'
+import { renderPlan, renderValidationErrors, renderRuntimeErrors } from 'contentful-migration/built/bin/lib/render-migration'
 import stepsError from 'contentful-migration/built/bin/lib/steps-errors'
 import writeErrorsToLog from 'contentful-migration/built/bin/lib/write-errors-to-log'
 import { createMakeRequest } from 'contentful-migration/built/bin/cli'
@@ -83,15 +83,15 @@ const run = async ({
   const errorsFile = path.join(process.cwd(), `errors-${Date.now()}.log`)
   const { batches } = parseResult
   if (parseResult.hasValidationErrors()) {
-    renderMigration.renderValidationErrors(batches, environmentId)
+    renderValidationErrors(batches, environmentId)
     process.exit(1)
   }
   if (parseResult.hasRuntimeErrors()) {
-    renderMigration.renderRuntimeErrors(batches, errorsFile)
+    renderRuntimeErrors(batches, errorsFile)
     await writeErrorsToLog(parseResult.getRuntimeErrors(), errorsFile)
     process.exit(1)
   }
-  await renderMigration.renderPlan(batches, environmentId)
+  await renderPlan(batches, environmentId)
   const serverErrorsWritten: Promise<void>[] = []
   const tasks = batches.map((batch) => {
     return {
