@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // vim: set ft=javascript:
 import yargs from 'yargs'
+import { Args, checkAccessToken } from '../../lib/client'
 import { initSpace } from '../../lib/store'
 
 export const command = 'init'
@@ -37,4 +38,7 @@ export const builder = (yargs: yargs.Argv) => {
     })
 }
 
-export const handler = initSpace;
+export const handler = (args: Args) => {
+  checkAccessToken(args.accessToken);
+  initSpace(args);
+};

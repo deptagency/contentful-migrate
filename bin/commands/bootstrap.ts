@@ -6,7 +6,7 @@ import readline from 'readline'
 import path from 'path'
 import yargs from 'yargs'
 import bootstrap from '../../lib/bootstrap'
-import { Args } from '../../lib/client'
+import { Args, checkAccessToken } from '../../lib/client'
 
 export const command = 'bootstrap'
 
@@ -49,7 +49,7 @@ export const handler = async ({
   spaceId,
   accessToken
 }: Args) => {
-
+  checkAccessToken(accessToken);
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout

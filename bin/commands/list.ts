@@ -6,6 +6,7 @@ import chalk from "chalk"
 import dateFormat from "dateformat"
 import log from "migrate/lib/log"
 import load from "../../lib/load";
+import { checkAccessToken } from "../../lib/client";
 
 export const command = "list";
 
@@ -51,6 +52,7 @@ export default async function ({
   environmentId,
   accessToken,
 }: Args): Promise<void> {
+  checkAccessToken(accessToken);
   const migrationsDirectory =
     process.env.CONTENTFUL_MIGRATIONS_DIR || path.join(".", "migrations");
 

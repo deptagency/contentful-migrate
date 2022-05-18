@@ -7,6 +7,7 @@ import log from 'migrate/lib/log'
 import load from '../../lib/load'
 import yargs from 'yargs'
 import { LoadArgs } from '../../lib/load'
+import { checkAccessToken } from '../../lib/client'
 
 export const command = 'down [file]'
 
@@ -60,7 +61,7 @@ export const handler = async (args: LoadArgs & { file: string }) => {
     file,
     spaceId
   } = args
-
+  checkAccessToken(accessToken);
   const migrationsDirectory = process.env.CONTENTFUL_MIGRATIONS_DIR || path.join('.', 'migrations')
 
   // Load in migrations
