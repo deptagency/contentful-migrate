@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import contentful, { createClient, Environment } from 'contentful-management'
+import contentful, { createClient, CreateContentTypeProps, Environment } from 'contentful-management'
 import { MigrationState } from '../store'
 import dateformat from 'dateformat'
 import expect from 'expect.js'
@@ -7,6 +7,7 @@ import fs from 'fs'
 import path from 'path'
 import { promisify } from 'util'
 import { exec as exec_ } from 'child_process'
+import mkdirp from 'mkdirp'
 const exec = promisify(exec_);
 
 const accessToken = process.env.CONTENTFUL_INTEGRATION_MANAGEMENT_TOKEN
@@ -32,20 +33,27 @@ const client = createClient({ accessToken })
 let defaultLocale: string;
 let environment: contentful.Environment;
 
-async function createTestEnvironment (this: Mocha.Context) {
-  this.timeout(TIME_OUT)
+function sleep(ms: number): Promise<void> {
+  return new Promise(res => setTimeout(res, ms));
+}
+
+async function createTestEnvironment(
+  environmentId: string
+): Promise<{ environment: Environment, defaultLocale: string }> {
   const space = await client.getSpace(spaceId!)
-  environment = await space.createEnvironmentWithId(environmentId, { name: environmentId })
+  const env = await space.createEnvironmentWithId(environmentId, { name: environmentId })
+  let defaultLocale: string | null= null;
   while (!defaultLocale) {
     try {
-      defaultLocale = await environment.getLocales()
+      defaultLocale = await env.getLocales()
         .then(response => response.items.find(locale => locale.default))
         .then(locale => locale!.code)
     } catch (e) {
+      await sleep(100);
       console.log('Environment not created yet. Retrying')
     }
   }
-  return true
+  return { environment: env, defaultLocale };
 }
 async function getMigrationState(env: Environment): Promise<MigrationState>;
 async function getMigrationState(env: Environment, options: { default: null }): Promise<MigrationState | null>;
@@ -60,12 +68,26 @@ async function getMigrationState(env: Environment, options?: { default: null }):
 
 async function deleteTestEnvironment (this: Mocha.Context) {
   this.timeout(TIME_OUT)
+  await mkdirp(MIGRATIONS_FOLDER)
   await exec(`rm -r ${MIGRATIONS_FOLDER}`)
   return environment && environment.delete()
 }
 
+const nameField = {
+  id: 'name',
+  name: 'Name',
+  type: 'Text',
+  required: false,
+  localized: false,
+};
+
 describe('Integration Test @integration', () => {
-  before(createTestEnvironment)
+  before(async function (this: Mocha.Context) {
+    this.timeout(TIME_OUT);
+    const ret = await createTestEnvironment(environmentId);
+    environment = ret.environment;
+    defaultLocale = ret.defaultLocale;
+  })
 
   after(deleteTestEnvironment)
 
@@ -158,20 +180,14 @@ describe('Integration Test @integration', () => {
   describe('bootstrap command', () => {
     beforeEach(async () => {
       // delete migrations folder to set up for these set of tests
+      await mkdirp(MIGRATIONS_FOLDER);
       await exec(`rm -r ${MIGRATIONS_FOLDER}`);
     })
 
     it('creates scripts for all content types', async () => {
-      const contentTypeFields = [{
-        id: 'name',
-        name: 'Name',
-        type: 'Text',
-        required: false,
-        localized: false,
-      }]
       const contentTypeNames = ['Alpaca', 'Horse'];
       await Promise.all(contentTypeNames.map(async (name) => {
-        const contentType = { name, fields: contentTypeFields };
+        const contentType = { name, fields: [nameField] };
         const createdContentType = await environment.createContentTypeWithId(name.toLowerCase(), contentType);
         await createdContentType.publish();
       }));
@@ -193,5 +209,52 @@ describe('Integration Test @integration', () => {
       const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER)
       expect(migrationScripts.sort()).to.eql(scriptsRan.sort())
     }).timeout(30000)
+
+    it('copes with circular references in content models', async () => {
+      const post: CreateContentTypeProps = {
+        name: 'post', fields: [nameField, {
+        id: 'heroLink',
+        name: 'heroLink',
+        type: 'Link',
+        required: false,
+        localized: false,
+        validations: [
+          {"linkContentType":["hero"]}
+        ],
+        linkType: "Entry"
+      }] };
+      await environment.createContentTypeWithId(post.name, post).then(ct => ct.publish());
+      const hero: CreateContentTypeProps = {
+        name: 'hero', fields: [nameField, {
+        id: 'postLink',
+        name: 'postLink',
+        type: 'Link',
+        required: true,
+        localized: false,
+        validations: [
+          {"linkContentType":["post"]}
+        ],
+        linkType: "Entry"
+      }] };
+      await environment.createContentTypeWithId(hero.name, hero).then(ct => ct.publish());
+      await exec(`yes | ${MIGRATION_CMD} bootstrap ${TOKEN_SPACE_ENV_OPTIONS.join(' ')}`);
+
+      // and the resulting migrations can be applied without error
+      const bootstrapEnvId = `bootstrap-test-${dateformat(new Date(), 'UTC:yyyymmddHHMMss')}`;
+      const { environment: bootstrapEnv } = await createTestEnvironment(bootstrapEnvId);
+
+      try {
+        await exec(`${MIGRATION_CMD} init -t ${accessToken} -s ${spaceId} -e ${bootstrapEnvId}`);
+        await exec(`${MIGRATION_CMD} up -t ${accessToken} -s ${spaceId} -e ${bootstrapEnvId}`);
+
+        const ctypes = await bootstrapEnv.getContentTypes();
+        const contentTypeNames = ctypes.items.map(t => t.name)
+        expect(contentTypeNames).to.contain('post');
+        expect(contentTypeNames).to.contain('hero');
+      } finally {
+        await bootstrapEnv.delete();
+      }
+    }).timeout(TIME_OUT);
+
   })
 })

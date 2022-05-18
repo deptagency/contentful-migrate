@@ -14,8 +14,11 @@ export const removeNullValues = (value: any): any => {
   return value
 }
 
-export const createProp = ([key, value]: [string, any]) => `
+export const createProp = ([key, value]: [string, any]) => {
+  if (value === null) return '';
+  return `
   .${key}(${JSON.stringify(removeNullValues(value))})`
+}
 
 export const rejectEmptyObjects = ([, value]: [string, any]) => {
   const emptyArray = value.constructor === Array && value.length === 0

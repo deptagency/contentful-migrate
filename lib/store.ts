@@ -1,5 +1,6 @@
-import contentful, { createClient } from 'contentful-management'
+import contentful from 'contentful-management'
 import type Migration from 'contentful-migration'
+import getClient, { Args } from './client';
 import run from './run'
 
 const contentTypeId = 'single';
@@ -18,24 +19,22 @@ export interface MigrationState {
   }[];
 }
 
-export interface Args {
-  accessToken: string;
-  spaceId: string;
-  environmentId: string;
-}
-const defaultSpaceLocale: string | null = null;
-const getDefaultLocale = async ({ accessToken, spaceId, environmentId }: Args): Promise<string> => {
-  if (defaultSpaceLocale) return defaultSpaceLocale;
-  const client = createClient({ accessToken })
-  const loc = await client.getSpace(spaceId)
-    .then(space => space.getEnvironment(environmentId))
-    .then(space => space.getLocales())
-    .then(response => response.items.find(l => l.default))
+
+const getDefaultLocale = async (environment: contentful.Environment): Promise<string> => {
+  const loc = await environment.getLocales().then(ls => ls.items.find(l => l.default));
   if (!loc) return 'en-US'; // 🤞
   return loc.code
 }
 
-export function initSpace({ accessToken, spaceId, environmentId }: Args): Promise<void> {
+export async function initSpace(args: Args): Promise<void> {
+  const env = await getClient(args);
+  try {
+    await env.getContentType('migration');
+    return; // the content type already exists
+  } catch (e) {
+    // do nothing, go ahead and create it in the next step.
+  }
+  const { accessToken, spaceId, environmentId } = args;
   return new Promise(res => {
     const migrationFunction = (migration: Migration) => {
       const contentType = migration.createContentType('migration')
@@ -66,45 +65,42 @@ export function initSpace({ accessToken, spaceId, environmentId }: Args): Promis
   });
 }
 
-let cachedState: MigrationState | null;
-async function getStoreState (args: Args): Promise<MigrationState | null> {
-  const { accessToken, spaceId, environmentId } = args;
-  if (typeof cachedState !== 'undefined') {
-    return cachedState
+export const noEntries = Symbol('no-entries-found');
+export const noContentType = Symbol('no-content-type');
+export async function getStoreEntry (
+  environment: contentful.Environment
+): Promise<contentful.Entry | typeof noEntries | typeof noContentType > {
+  try {
+    const entries = await environment.getEntries(queryParams);
+    if (entries.items.length === 0) return noEntries;
+    return entries.items[0];
+  } catch (e) {
+    // migration content type likely doesn't exist.
+    return noContentType;
   }
-
-  const client = createClient({ accessToken })
-  const entries = await client.getSpace(spaceId)
-    .then(space => space.getEnvironment(environmentId))
-    .then(space => space.getEntries(queryParams));
-  if (entries.items[0]) {
-    cachedState = entries.items[0].fields.state[await getDefaultLocale(args)];
-  } else {
-    cachedState = null;
-  }
-  return cachedState;
 }
 
 export interface ContentfulStoreArgs extends Args {
   dryRun: boolean;
   locale: string;
+  environment: contentful.Environment;
 }
 export class ContentfulStore {
-  public spaceId: string;
-  public environmentId: string;
-  public accessToken: string;
   public dryRun: boolean;
   public locale: string;
-  public client: contentful.ClientAPI;
+  public environment: contentful.Environment;
+  public accessToken: string;
+  public spaceId: string;
+  public environmentId: string;
   constructor ({
-    spaceId, environmentId, accessToken, dryRun, locale
+    environment, dryRun, locale, accessToken, spaceId, environmentId,
   }: ContentfulStoreArgs) {
+    this.dryRun = dryRun
+    this.environment = environment;
+    this.locale = locale
+    this.accessToken = accessToken
     this.spaceId = spaceId
     this.environmentId = environmentId
-    this.accessToken = accessToken
-    this.dryRun = dryRun
-    this.client = createClient({ accessToken })
-    this.locale = locale
     return this
   }
 
@@ -123,29 +119,26 @@ export class ContentfulStore {
   }
 
   deleteState () {
-    return this.client.getSpace(this.spaceId)
-      .then(space => space.getEnvironment(this.environmentId))
-      .then((space) => space.getEntry(contentTypeId))
+    return this.environment.getEntry(contentTypeId)
       .then((entry) => entry.delete())
   }
 
-  writeState (set: MigrationState) {
+  async writeState (set: MigrationState) {
     if (this.isSetEmpty(set)) {
       return this.deleteState()
     }
-    return this.client.getSpace(this.spaceId)
-      .then(space => space.getEnvironment(this.environmentId))
-      .then(space => space.getEntries(queryParams))
+    return this.environment.getEntries(queryParams)
+      .catch(() => {
+        throw new Error(`Unable to find migration content type. Do you need to run \`init\` first?`);
+      })
       .then((entries) => {
         if (entries.total === 0) {
-          return this.client.getSpace(this.spaceId)
-            .then(space => space.getEnvironment(this.environmentId))
-            .then(space => space.createEntryWithId('migration', contentTypeId, {
+          return this.environment.createEntryWithId('migration', contentTypeId, {
               fields: {
                 contentTypeId: { [this.locale]: contentTypeId },
                 state: this.createStateFrom(set)
               }
-            }))
+            })
         }
         const entry = entries.items[0]
         entry.fields.state = this.createStateFrom(set)
@@ -162,13 +155,20 @@ export class ContentfulStore {
       .catch(error => fn(error))
   }
 
-  get args(): Args {
-    return { accessToken: this.accessToken, spaceId:  this.spaceId, environmentId: this.environmentId};
+  load (fn: (error: any, state: MigrationState) => any): void {
+    getStoreEntry(this.environment)
+      .then(entry => {
+        if (entry === noContentType) {
+          fn(new Error(`Unable to find content type called 'migration'. Do you need to run \`init\` first?`), {} as any);
+        } else {
+          const state = entry === noEntries ? {} : entry.fields.state[this.locale];
+          fn(null, state);
+        }
+      });
   }
 
-  load (fn: (error: any, state: MigrationState) => any): void {
-    getStoreState(this.args)
-      .then(state => fn(null, (state || {}) as any));
+  get args(): Args {
+    return { environmentId: this.environmentId, spaceId: this.spaceId, accessToken: this.accessToken };
   }
 
   init () {
@@ -180,7 +180,7 @@ interface CreateStoreArgs extends Args {
   dryRun: boolean;
 }
 export async function createStore(args: CreateStoreArgs) {
-  await getStoreState(args)
-  const locale = await getDefaultLocale(args);
-  return new ContentfulStore({ ...args, locale })
+  const environment = await getClient(args);
+  const locale = await getDefaultLocale(environment);
+  return new ContentfulStore({ ...args, locale, environment })
 }

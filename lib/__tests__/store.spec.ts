@@ -20,6 +20,7 @@ const set: MigrationState = JSON.parse(`
 
 describe('ContentfulStore', () => {
   const store = new ContentfulStore({
+    environment: {} as any,
     accessToken: 'token',
     spaceId: 'space-id',
     environmentId: 'master',

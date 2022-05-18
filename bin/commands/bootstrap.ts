@@ -6,7 +6,7 @@ import readline from 'readline'
 import path from 'path'
 import yargs from 'yargs'
 import bootstrap from '../../lib/bootstrap'
-import { Args } from '../../lib/store'
+import { Args } from '../../lib/client'
 
 export const command = 'bootstrap'
 
