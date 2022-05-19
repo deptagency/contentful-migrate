@@ -8,6 +8,7 @@ import load from '../../lib/load'
 import yargs from 'yargs'
 import { LoadArgs } from '../../lib/load'
 import { checkAccessToken } from '../../lib/client'
+import { generateTypedefs } from '../../lib/download-schema'
 
 export const command = 'down [file]'
 
@@ -47,19 +48,25 @@ export const builder = (yargs: yargs.Argv) => {
       boolean: true,
       default: false
     })
+    .option('write-typedefs', {
+      describe: 'path where generated type definitions should be written',
+      type: 'string',
+      requiresArg: false,
+    })
     .positional('file', {
       describe: 'If specified, rollback all migrations scripts down to this one.',
       type: 'string'
     })
 }
 
-export const handler = async (args: LoadArgs & { file: string }) => {
+export const handler = async (args: LoadArgs & { file: string, writeTypedefs: string }) => {
   const {
     accessToken,
     dryRun,
     environmentId,
     file,
-    spaceId
+    spaceId,
+    writeTypedefs,
   } = args
   checkAccessToken(accessToken);
   const migrationsDirectory = process.env.CONTENTFUL_MIGRATIONS_DIR || path.join('.', 'migrations')
@@ -69,13 +76,18 @@ export const handler = async (args: LoadArgs & { file: string }) => {
     migrationsDirectory, spaceId, environmentId, accessToken, dryRun
   })
   const name = (file) || set.lastRun
-  runMigrations(set, 'down', name!, (error) => {
+  runMigrations(set, 'down', name!, async (error) => {
     if (error) {
       log('error', error)
       process.exit(1)
     }
 
     log('migration', 'complete')
+    if (writeTypedefs) {
+      console.log('regenerating type definitions');
+      await generateTypedefs({ accessToken, environmentId, spaceId, writeTypedefs });
+      console.log('complete');
+    }
     process.exit(0)
   })
 }

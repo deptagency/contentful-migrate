@@ -6,6 +6,7 @@ import deleteScripts from './bootstrap/deleteScripts'
 import rewriteMigration from './bootstrap/rewriteMigration'
 import getClient from './client'
 import { getStoreEntry, initSpace, noContentType } from './store'
+import downloadSchema from './download-schema'
 
 export default async function bootstrap(
   spaceId: string,
@@ -17,6 +18,7 @@ export default async function bootstrap(
   try {
     await deleteScripts(migrationsDirectory)
     const files = await generateScripts(spaceId, environmentId, accessToken, migrationsDirectory)
+    await downloadSchema({ spaceId, environmentId, accessToken, migrationsDirectory });
     if (writeMigrationState) {
       const args = { spaceId, environmentId, accessToken };
       const environment = await getClient(args);

@@ -1,4 +1,5 @@
 import contentful from 'contentful-management'
+import path from 'path';
 import type Migration from 'contentful-migration'
 import getClient, { Args } from './client';
 import run from './run'
@@ -59,7 +60,8 @@ export async function initSpace(args: Args): Promise<void> {
       accessToken,
       dryRun: false,
       migrationFunction,
-      next: res
+      next: res,
+      migrationsDirectory: process.env.CONTENTFUL_MIGRATIONS_DIR || path.join('.', 'migrations')
     }
     return run(args)
   });

@@ -9,6 +9,7 @@ import chalk from 'chalk'
 import log from 'migrate/lib/log'
 import load from '../../lib/load'
 import { checkAccessToken } from '../../lib/client'
+import { generateTypedefs } from '../../lib/download-schema'
 
 export const command = 'up [file]'
 
@@ -59,6 +60,11 @@ export const builder = (yargs: yargs.Argv) => {
       boolean: true,
       default: false
     })
+    .option('write-typedefs', {
+      describe: 'path where generated type definitions should be written',
+      type: 'string',
+      requiresArg: false,
+    })
     .positional('file', {
       describe: 'If specified, applies all pending migrations scripts up to this one.',
       type: 'string'
@@ -73,6 +79,7 @@ interface Args {
   environmentId: string;
   file?: string;
   spaceId: string;
+  writeTypedefs?: string;
 }
 export const handler = async (args: Args) => {
   const {
@@ -80,7 +87,8 @@ export const handler = async (args: Args) => {
     dryRun,
     environmentId,
     file,
-    spaceId
+    spaceId,
+    writeTypedefs
   } = args
   checkAccessToken(accessToken);
   const migrationsDirectory = process.env.CONTENTFUL_MIGRATIONS_DIR || path.join('.', 'migrations')
@@ -91,13 +99,18 @@ export const handler = async (args: Args) => {
     dryRun,
     environmentId,
     migrationsDirectory,
-    spaceId
+    spaceId,
   });
   console.log(chalk.bold.blue('Processing migrations'))
   try {
     await runMigrationsAsync(set, 'up', file!)
     console.log('All migrations applied')
     console.log(chalk.bold.yellow(`\n🎉  All content types in ${environmentId} are up-to-date`))
+    if (writeTypedefs) {
+      console.log('regenerating type definitions');
+      await generateTypedefs({ accessToken, environmentId, spaceId, writeTypedefs });
+      console.log('complete');
+    }
   } catch (err) {
     log.error('error', err)
     console.log(chalk.bold.red(`\n🚨  Error applying migrations to "${environmentId}" environment! See above for error messages`))

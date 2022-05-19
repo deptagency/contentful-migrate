@@ -7,6 +7,7 @@ import path from 'path'
 import yargs from 'yargs'
 import bootstrap from '../../lib/bootstrap'
 import { Args, checkAccessToken } from '../../lib/client'
+import { generateTypedefs } from '../../lib/download-schema'
 
 export const command = 'bootstrap'
 
@@ -40,6 +41,11 @@ export const builder = (yargs: yargs.Argv) => {
       default: process.env.CONTENTFUL_ENV_ID || 'master',
       defaultDescription: 'environment var CONTENTFUL_ENV_ID if exists, otherwise master'
     })
+    .option('write-typedefs', {
+      describe: 'path where generated type definitions should be written',
+      type: 'string',
+      requiresArg: false,
+    })
 }
 
 const isYes = (response: string) => response === 'y' || response === 'yes'
@@ -47,8 +53,9 @@ const isYes = (response: string) => response === 'y' || response === 'yes'
 export const handler = async ({
   environmentId,
   spaceId,
-  accessToken
-}: Args) => {
+  accessToken,
+  writeTypedefs
+}: Args & { writeTypedefs?: string }) => {
   checkAccessToken(accessToken);
   const rl = readline.createInterface({
     input: process.stdin,
@@ -74,4 +81,9 @@ export const handler = async ({
   }
   rl.close()
   await bootstrap(spaceId, environmentId, accessToken, migrationsDirectory, writeMigrationState)
+  if (writeTypedefs) {
+    console.log('regenerating type definitions');
+    await generateTypedefs({ accessToken, environmentId, spaceId, writeTypedefs });
+    console.log('complete');
+}
 }

@@ -18,6 +18,7 @@ import stepsError from 'contentful-migration/built/bin/lib/steps-errors'
 import writeErrorsToLog from 'contentful-migration/built/bin/lib/write-errors-to-log'
 import { createMakeRequest } from 'contentful-migration/built/bin/cli'
 import { version } from '../package.json'
+import downloadSchema from './download-schema'
 
 class BatchError extends Error {
   public batch: any;
@@ -34,16 +35,21 @@ export interface RunArgs {
   environmentId: string,
   accessToken: string,
   dryRun: boolean,
-  migrationFunction: (args: any) => any
+  migrationFunction: (args: any) => any,
+  migrationsDirectory: string;
 }
-const run = async ({
-  spaceId, environmentId, accessToken, dryRun, migrationFunction
-}: RunArgs) => {
-  const config = { spaceId, environmentId, accessToken }
-  if (!/^CFPAT-/.test(accessToken)) {
+const run = async (args: RunArgs) => {
+  if (!/^CFPAT-/.test(args.accessToken)) {
     console.log("error: access token not set or did not match pattern. Make sure you're using a personal access token")
     process.exit(1)
   }
+
+  await downloadSchema(args);
+
+  const {
+    spaceId, environmentId, accessToken, dryRun, migrationFunction
+  } = args;
+  const config = { spaceId, environmentId, accessToken }
 
   const clientConfig = Object.assign({
     application: `contentful-migrate/${version}`

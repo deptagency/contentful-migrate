@@ -1,4 +1,3 @@
-import { createClient } from 'contentful-management'
 import { ContentType } from 'contentful-management/dist/typings/export-types'
 import chalk from 'chalk'
 import pMap from 'p-map'
@@ -6,6 +5,7 @@ import log from 'migrate/lib/log'
 
 import createFile from './createFile'
 import { jsonToScript } from './jsonToScript'
+import getClient from '../client'
 
 // Magic number to prevent overloading the contentful management API.
 // TODO: passed in from bootstrap command as an option
@@ -14,9 +14,7 @@ const concurrency = 5
 export default async function generateScripts (
   spaceId: string, environmentId: string, accessToken: string, migrationsDirectory: string
 ) {
-  const client = createClient({ accessToken })
-  const space = await client.getSpace(spaceId)
-  const environment = await space.getEnvironment(environmentId)
+  const environment = await getClient({ environmentId, accessToken, spaceId });
   // TODO: add pagination when content type exceeds 1000
   const contentTypeResponse = await environment.getContentTypes({ limit: 1000 })
   const requiredContentTypes = contentTypeResponse.items.filter(item => item.sys.id !== 'migration')

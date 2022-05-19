@@ -14,19 +14,17 @@ const runWrapper = (args: RunArgs) => {
   }
 }
 
-function configureSet(set: MigrationSet, spaceId: string, environmentId: string, accessToken: string, dryRun: boolean) {
+function configureSet(set: MigrationSet, args: LoadArgs) {
   set.migrations.forEach((migration) => {
     /* eslint-disable no-param-reassign */
     if (migration.up) {
-      const migrationFunction = migration.up
       migration.up = runWrapper({
-        migrationFunction, spaceId, environmentId, accessToken, dryRun
+        ...args, migrationFunction: migration.up,
       })
     }
     if (migration.down) {
-      const migrationFunction = migration.down
       migration.down = runWrapper({
-        migrationFunction, spaceId, environmentId, accessToken, dryRun
+        ...args, migrationFunction: migration.down,
       })
     }
     /* eslint-enable no-param-reassign */
@@ -50,20 +48,13 @@ export interface LoadArgs {
   dryRun: boolean;
   migrationsDirectory: string;
 }
-export default async function load({
-  migrationsDirectory,
-  spaceId,
-  environmentId,
-  accessToken,
-  dryRun,
-}: LoadArgs): Promise<MigrationSet> {
-  const store = await createStore({
-    accessToken,
-    dryRun,
-    environmentId,
-    spaceId
-  })
+export default async function load(args: LoadArgs): Promise<MigrationSet> {
+  const store = await createStore(args)
 
-  return loadAsync({ stateStore: store as any, migrationsDirectory })
-    .then((set: MigrationSet) => configureSet(set, spaceId, environmentId, accessToken, dryRun))
+  return loadAsync({
+    stateStore: store as any,
+    migrationsDirectory: args.migrationsDirectory,
+    filterFunction: filename => filename !== 'current-schema.json',
+  })
+    .then((set: MigrationSet) => configureSet(set, args))
 }
