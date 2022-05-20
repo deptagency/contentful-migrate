@@ -108,7 +108,7 @@ describe('Integration Test @integration', () => {
   describe('create command', () => {
     it('should create a template file in migrations folder', async () => {
       await exec(`${NODE_CMD} ${MIGRATION_CMD} create create-horse`);
-      const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER).filter(f => f !== 'current-schema.json')
+      const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER).filter(filename => !filename.startsWith('current-schema.'))
       expect(migrationScripts).to.have.length(1)
       expect(migrationScripts[0]).to.match(/\d{14}-create-horse.js/)
     }).timeout(TIME_OUT)
@@ -129,7 +129,7 @@ describe('Integration Test @integration', () => {
       const scriptsRan = state.migrations.map(migration => migration.title)
       expect(scriptsRan).to.have.length(1)
 
-      const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER).filter(f => f !== 'current-schema.json')
+      const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER).filter(filename => !filename.startsWith('current-schema.'))
       expect(migrationScripts).to.eql(scriptsRan)
     }).timeout(30000)
 
@@ -142,7 +142,7 @@ describe('Integration Test @integration', () => {
 
       expect(state).to.eql(previousMigration);
 
-      const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER).filter(f => f !== 'current-schema.json')
+      const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER).filter(filename => !filename.startsWith('current-schema.'))
       expect(migrationScripts.length).to.eql(state.migrations.length)
     }).timeout(30000)
 
@@ -194,7 +194,7 @@ describe('Integration Test @integration', () => {
 
       await exec(`yes no | ${MIGRATION_CMD} bootstrap ${TOKEN_SPACE_ENV_OPTIONS.join(' ')}`)
 
-      const contentTypes = fs.readdirSync(MIGRATIONS_FOLDER).filter(f => f !== 'current-schema.json')
+      const contentTypes = fs.readdirSync(MIGRATIONS_FOLDER).filter(filename => !filename.startsWith('current-schema.'))
       expect(contentTypes).to.have.length(2)
     }).timeout(30000)
 
@@ -206,7 +206,7 @@ describe('Integration Test @integration', () => {
       const scriptsRan = state.migrations.map(migration => migration.title)
       expect(scriptsRan).to.have.length(2)
 
-      const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER).filter(f => f !== 'current-schema.json')
+      const migrationScripts = fs.readdirSync(MIGRATIONS_FOLDER).filter(filename => !filename.startsWith('current-schema.'))
       expect(migrationScripts.sort()).to.eql(scriptsRan.sort())
     }).timeout(30000)
 
@@ -254,7 +254,7 @@ describe('Integration Test @integration', () => {
       } finally {
         await bootstrapEnv.delete();
       }
-    }).timeout(TIME_OUT);
+    }).timeout(TIME_OUT * 2);
 
   })
 })

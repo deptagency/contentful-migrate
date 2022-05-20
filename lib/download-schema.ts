@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path';
 import type { Args } from "./client";
 import contentfulExport from 'contentful-export';
 import getClient from "./client";
@@ -12,6 +13,7 @@ export default async function downloadSchema(
   { spaceId, environmentId, accessToken, migrationsDirectory }: DownloadSchemaArgs
 ) {
   await mkdirp(migrationsDirectory);
+  await fs.promises.copyFile(path.join(__dirname, 'current-schema.d.ts'), path.join(migrationsDirectory, 'current-schema.d.ts'));
   return contentfulExport({
     spaceId,
     environmentId,

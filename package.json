@@ -16,7 +16,7 @@
   },
   "scripts": {
     "precommit": "npm test",
-    "build": "tsc && cp bin/ctf-migrate dist/bin/ && cp lib/template.js dist/lib/",
+    "build": "tsc && cp bin/ctf-migrate dist/bin/ && cp lib/template.js dist/lib/ && cp lib/current-schema.d.ts dist/lib/",
     "dev": "tsc --watch",
     "test": "npm run build && npm run lint && npm run test:unit",
     "test:ci": "npm run lint && npm run test:all",

@@ -40,5 +40,5 @@ export const builder = (yargs: yargs.Argv) => {
 
 export const handler = (args: Args) => {
   checkAccessToken(args.accessToken);
-  initSpace(args);
+  return initSpace(args);
 };

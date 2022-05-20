@@ -54,7 +54,7 @@ export default async function load(args: LoadArgs): Promise<MigrationSet> {
   return loadAsync({
     stateStore: store as any,
     migrationsDirectory: args.migrationsDirectory,
-    filterFunction: filename => filename !== 'current-schema.json',
+    filterFunction: filename => !filename.startsWith('current-schema.'),
   })
     .then((set: MigrationSet) => configureSet(set, args))
 }
