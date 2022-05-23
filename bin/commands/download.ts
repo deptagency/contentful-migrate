@@ -52,7 +52,7 @@ interface Args {
   accessToken: string;
   writeTypedefs: string;
 }
-export default async function (args: Args): Promise<void> {
+export async function handler (args: Args): Promise<void> {
   checkAccessToken(args.accessToken);
   const migrationsDirectory =
     process.env.CONTENTFUL_MIGRATIONS_DIR || path.join(".", "migrations");
