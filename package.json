@@ -62,7 +62,7 @@
     "typescript": "^4.6.4"
   },
   "dependencies": {
-    "@bgschiller/contentful-typescript-codegen": "^3.2.7",
+    "@bgschiller/contentful-typescript-codegen": "^3.2.8",
     "chalk": "^3.0.0",
     "contentful-export": "^7.17.6",
     "contentful-management": "^7.11.0",
