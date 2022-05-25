@@ -17,7 +17,7 @@ export const removeNullValues = (value: any): any => {
 export const createProp = ([key, value]: [string, any]) => {
   if (value === null) return '';
   return `
-  .${key}(${JSON.stringify(removeNullValues(value))})`
+    .${key}(${JSON.stringify(removeNullValues(value))})`
 }
 
 export const rejectEmptyObjects = ([, value]: [string, any]) => {
@@ -37,7 +37,7 @@ export const createChangeFieldControl = (itemId: string, field: any) => {
 export const createContentType = (item: any, editorInterface: any) => `
   const ${item.id} = migration.createContentType('${item.id}')${''.concat(...Object.entries(item.props).map(createProp))};
   ${''.concat(...item.fields.map((field: any) => createField(item.id, field)))}
-  ${editorInterface.map((field: any) => createChangeFieldControl(item.id, field)).join('\n')}
+  ${editorInterface.map((field: any) => createChangeFieldControl(item.id, field)).join('\n  ')}
 `
 export const createScript = (item: any, editorInterface: any) => `module.exports.description = "Create content model for ${item.props.name}";
 
