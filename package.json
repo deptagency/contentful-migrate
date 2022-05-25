@@ -1,6 +1,6 @@
 {
   "name": "@bgschiller/contentful-migrate",
-  "version": "0.18.6",
+  "version": "0.18.7",
   "description": "Migration tooling for Contentful, with state management",
   "keywords": [
     "migrate",
