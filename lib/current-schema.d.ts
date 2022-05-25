@@ -1,4 +1,4 @@
-import { IFieldOptions } from 'contentful-migration';
+import type { IFieldOptions } from 'contentful-migration';
 type FieldType = IFieldOptions['type'];
 
 declare module "./current-schema.json" {
