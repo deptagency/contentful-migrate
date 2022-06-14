@@ -3,7 +3,7 @@ import path from 'path';
 import type { Args } from "./client";
 import contentfulExport from 'contentful-export';
 import getClient from "./client";
-import render from '@bgschiller/contentful-typescript-codegen/dist/lib/renderers/render'
+import render from '@deptdash/contentful-typescript-codegen/dist/lib/renderers/render'
 import mkdirp from 'mkdirp';
 
 export interface DownloadSchemaArgs extends Args {
